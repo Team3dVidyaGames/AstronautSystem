@@ -1,0 +1,103 @@
+(if we can get this staking out before astronaut that would be cool so astronaut could earn stakers something too)
+
+https://w3.lol/astronaut/
+click on games, astronaut, UI demo what it would be like somewhat
+
+you just buy oxygen tanks from merchant, feed it to astronaut and it mines dark matter for you
+
+could you also write up a mockup for astronaut (the game that farms dark matter nft and consumes oxygen tanks to keep working):
+
+i'd like for it to have experience points system similar to runescape. 
+So astronaut's harvesting skill would gain experience points per each successful +1 dark matter 
+the higher the experience points, the higher its harvesting level and the more dark matter it harvests (in less amount of time)
+so this would essentially make longer standing astronauts gather more dark matter with less oxygen consumed
+i think it's interesting to not have a max level cap, just see how big players train this 
+of course similar to runescape the next level would be slightly harder to reach requiring more experience points
+
+don't worry about consuming oxygen tanks, i'll work on this- it's just a simple burn function call really. 
+so we're going to put oxygen tank item for sale on the merchant contract, players will be able to buy those 
+and give it to astronaut so it can continue working. I think let's make it so if user fails to give its astronaut oxygen within a given time (help me figure this time frame out too)
+then all of the harvesting experience and progress will be reset. This needs to be harsh enough so players don't want to just let it go
+
+tl;dr
+player buys oxygen tank from merchant
+feeds it to astronaut
+astronaut is then able to harvest dark matter nfts and gain experience points in harvesting skill
+
+what I need from you is all the math behind it, i can work out the rest. Just think of some functional way for experience points, harvesting level,
+oxygen tank consumed, etc. all of these to work and make sense. you can be creative with this i don't really have any specific ideas in mind right now.
+
+since nfts are without decimals you need to factor this into your formulas i think? We can call createFromTemplate() to make 1x dark matter, but there can't be 0.01 dark matter for example.
+
+----
+
+blastscout — 08/02/2021
+So for the astronaut game, I think you should have levels and three skills potential
+Skills:
+-Harvest (Controls the amount collected every cycle)
+-Speed (How fast a cycle is completed)
+-Oxygen Use (Over time the astronaut is better at using the tanks increasing the time a tank provides)
+The system it self can track how much dark matter in fractions but can only collect in whole peices.
+The first Tank used Collects 1 dark matter in 1 cycle in 1 day something along that line.
+Each level requires the same number of tanks to level up
+To get to level three you need to use 2 tanks in level 2.
+level 2
+-1 tank last 1.5 days
+-1.5 dark matter a cycle
+-.5 days per cycle
+level 3
+-1 tank last 2.25 days
+-2.25 dark matter a cycle
+-0.25 days for a cycle
+We can adjust the numbers.
+
+----
+
+there needs to be the "challenge" effect too like... a bit of runescape style grind to it, not just easy dark matter and xp
+we have no idea how much the tanks are going to cost lol
+
+should probably be adjustable amount since vidya price can change a lot
+
+----
+
+blastscout — 08/02/2021
+Maybe instead of it begin longer lasting tanks it's more tanks it hold
+
+That way since tanks feed the generator with sales it'll require more from there and you could sell them fairly cheap
+
+----
+
+it would be awesome to unlock new carrier vessels
+
+----
+
+blastscout — 08/02/2021
+The level would automaticly unlock it
+
+The astronaut picture would change
+
+You could have NFT's as milestones
+
+Say 1 tank cost 5 vidya, 1 tank can last 1 hour at level 1
+The user can deposit tanks while the astronaut is out.
+Without the "extra" vessels the there is a down time from collection between tanks
+So I deposit 48 tanks to last 2 days
+These tanks only have a 75% effeciency rating because the astrounaught needs to go out and come back on the same tank
+The vessels and speed skill can increase this rating to provide better harvesting
+
+Vessels increase the # of tanks an astronaught can carry and the speed decreases the resupply time needed
+If the supply depo runs out then the astronaught floats away with the vessel
+
+We can set the tank cost at 5 but have the vaule adjust with supply and demand.
+5 is there is no demand and a lot of supply, then 10 when half of the supply is still circulating. 25 when under 25%
+Once, a user deposits the Tank into the game its get burned and returned to the merchant
+
+I think the tanks being a resupply point is idea since eth network can take hours to process when bogged down
+
+We should use the amount of tanks deposited as EXP for the levels, and keep their value to about 1-5 VIDYA a pop and 
+make them last 30mins - 1 hour. This way it's not $$$ to play a game to collect dark matter.
+The value of dark matter will be based on this game in the end.
+
+They gain one exp for every tank entered for use or 5 exp for every tank used for "Training".
+
+Start rate .5/tank and rate 10/tank
