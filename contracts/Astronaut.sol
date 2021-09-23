@@ -179,8 +179,6 @@ contract Astronaut is Ownable, ReentrancyGuard {
             "Astronaut: There can only be one"
         );
 
-        require(_amount <= 15, "Astronaut: Too many tanks");
-
         Inventory.burn(msg.sender, tankId, _amount);
 
         Astronauts memory holder;
@@ -290,8 +288,6 @@ contract Astronaut is Ownable, ReentrancyGuard {
             "Astronaut: There can only be one."
         );
 
-        require(_amount <= 15, "Astronaut: Too many tanks");
-
         Vidya.safeTransferFrom(msg.sender, vaultAddr, fee);
 
         Inventory.burn(msg.sender, tankId, _amount);
@@ -331,7 +327,6 @@ contract Astronaut is Ownable, ReentrancyGuard {
         external
         nonReentrant
     {
-        require(_amount <= 15, "Astronaut: Too much Dark Matter at once.");
 
         Inventory.burn(msg.sender, darkMatterId, _amount);
 
