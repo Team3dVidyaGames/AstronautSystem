@@ -352,15 +352,9 @@ contract Astronaut is Ownable, ReentrancyGuard {
         uint256 removeBonus = _amount * 2;
 
         if (nftOwned >= removeBonus) {
-            Inventory.createItemFromTemplate(
+            Inventory.mint(msg.sender
                 darkMatterId,
-                0,
-                0,
-                0,
-                0,
-                0,
-                _amount,
-                msg.sender
+                _amount
             );
         }
         user.darkMatterBonus = 100 + nftOwned - removeBonus;
@@ -436,9 +430,9 @@ contract Astronaut is Ownable, ReentrancyGuard {
         if (_level + 1 >= levels.length) {
             levels.push(levels[_level] + ((_level + 1) * darkMatterDeci));
             emit LevelUpdated(true, _level);
+        }else{
+            emit LevelUpdated(false, _level);
         }
-
-        emit LevelUpdated(false, _level);
     }
 
     /**
