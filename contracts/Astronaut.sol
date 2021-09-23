@@ -257,7 +257,7 @@ contract Astronaut is Ownable, ReentrancyGuard {
                 user.level[_skill] = level + 1;
                 user.experience[_skill] -= levels[level];
                 user.multiplier[_skill] -= 1;
-                nextLevel(level);
+                nextLevel(level + 1);
             }
         } else {
             emit maxLevelAcheived(_skill, maxLevel);
@@ -374,10 +374,9 @@ contract Astronaut is Ownable, ReentrancyGuard {
      */
     function trainAstronaut(
         uint256 _amount,
-        uint256 _skill,
-        uint256 _tokenAmount
+        uint256 _skill
     ) external notDeadYet nonReentrant {
-        require(_skill <= 2, "Astronaut: Skill outside of range");
+        require(_skill < 3, "Astronaut: Skill outside of range");
 
         uint256 experienceGained;
 
@@ -392,11 +391,10 @@ contract Astronaut is Ownable, ReentrancyGuard {
             DarkMatter.burn(msg.sender, _amount);
             experienceGained = (_amount * expToBuy) / maxDarkMatterTank;
         } else {
-            require(_tokenAmount <= 15, "Astronaut: Too many tanks");
 
             Inventory.burn(msg.sender, tankId, _amount);
 
-            experienceGained = _tokenAmount * expToBuy;
+            experienceGained = _amount * expToBuy;
         }
 
         players[msg.sender].experience[_skill] += experienceGained;
@@ -427,8 +425,8 @@ contract Astronaut is Ownable, ReentrancyGuard {
      * @param _level Increased level
      */
     function nextLevel(uint256 _level) private {
-        if (_level + 1 >= levels.length) {
-            levels.push(levels[_level] + ((_level + 1) * darkMatterDeci));
+        if (_level >= levels.length) {
+            levels.push(levels[_level-1] + ((_level + 1) * darkMatterDeci));
             emit LevelUpdated(true, _level);
         }else{
             emit LevelUpdated(false, _level);
