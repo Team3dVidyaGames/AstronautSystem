@@ -433,7 +433,7 @@ contract Astronaut is Ownable, ReentrancyGuard {
      * @param _level Increased level
      */
     function nextLevel(uint256 _level) private {
-        if (_level >= levels.length) {
+        if (_level + 1 >= levels.length) {
             levels.push(levels[_level] + ((_level + 1) * darkMatterDeci));
             emit LevelUpdated(true, _level);
         }
