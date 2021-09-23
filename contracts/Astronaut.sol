@@ -386,8 +386,8 @@ contract Astronaut is Ownable, ReentrancyGuard {
     }
 
     function changeTankRate(uint256 _DMamount) public onlyOwner {
-        // maxDarkMatterTank = _DMamount * scale;
-        // emit tankRateChange(_DMamount);
+        maxDarkMatterTank = _DMamount * scale;
+        emit tankRateChange(_DMamount);
     }
 
     function changeCostOfTank(uint256 _amount) public onlyOwner {
