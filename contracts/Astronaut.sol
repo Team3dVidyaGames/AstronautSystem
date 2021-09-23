@@ -94,7 +94,7 @@ contract Astronaut is Ownable, ReentrancyGuard {
     uint256 public constant expToBuy = 5 * 10**17;
 
     uint256 public constant darkMatterId = 18;
-    uint256 public constant tankID = 36;
+    uint256 public constant tankId = 36;
     uint256 public constant maxLevel = 99;
 
     uint256 public maxDarkMatterTank;
@@ -167,13 +167,11 @@ contract Astronaut is Ownable, ReentrancyGuard {
      * @dev External function to create Astronaut.
      * @param _name Astronaut Name
      * @param _skill Skill attribution
-     * @param _tokenId Tank token Id
      * @param _amount Tank amount
      */
     function createAstronaut(
         string memory _name,
         uint256 _skill,
-        uint256 _tokenId,
         uint256 _amount
     ) external {
         require(
@@ -183,7 +181,7 @@ contract Astronaut is Ownable, ReentrancyGuard {
 
         require(_amount <= 15, "Astronaut: Too many tanks");
 
-        Inventory.burn(msg.sender, _tokenId, _amount);
+        Inventory.burn(msg.sender, tankId, _amount);
 
         Astronauts memory holder;
 
@@ -200,23 +198,18 @@ contract Astronaut is Ownable, ReentrancyGuard {
 
         players[msg.sender] = holder;
 
-        emit AstronautCreated(msg.sender, _name, _skill, _tokenId, _amount);
+        emit AstronautCreated(msg.sender, _name, _skill, tankId, _amount);
     }
 
     /**
      * @dev External function to add tanks.
-     * @param _tokenId Tank token Id
      * @param _amount Tank amount
      * @param _skill Skill attribution
      */
-    function addTanks(
-        uint256 _tokenId,
-        uint256 _amount,
-        uint256 _skill
-    ) external notDeadYet {
+    function addTanks(uint256 _amount, uint256 _skill) external notDeadYet {
         require(_amount <= 15, "Astronaut: Too many tanks");
 
-        Inventory.burn(msg.sender, _tokenId, _amount);
+        Inventory.burn(msg.sender, tankId, _amount);
 
         collectDarkMatter(_skill);
 
@@ -227,7 +220,7 @@ contract Astronaut is Ownable, ReentrancyGuard {
         emit TanksAdded(
             msg.sender,
             players[msg.sender].timeTillDeath,
-            _tokenId,
+            tankId,
             _amount,
             _skill
         );
@@ -285,10 +278,9 @@ contract Astronaut is Ownable, ReentrancyGuard {
 
     /**
      * @dev External function to rescue astronaut. This function can be called by only astronuat hasn't got any O2 tanks.
-     * @param _tokenId Tank token Id
      * @param _amount Tank amount
      */
-    function rescueAstronaut(uint256 _tokenId, uint256 _amount)
+    function rescueAstronaut(uint256 _amount)
         external
         aloneInSpace
         nonReentrant
@@ -302,7 +294,7 @@ contract Astronaut is Ownable, ReentrancyGuard {
 
         Vidya.safeTransferFrom(msg.sender, vaultAddr, fee);
 
-        Inventory.burn(msg.sender, _tokenId, _amount);
+        Inventory.burn(msg.sender, tankId, _amount);
 
         Astronauts storage user = players[msg.sender];
 
@@ -327,28 +319,21 @@ contract Astronaut is Ownable, ReentrancyGuard {
 
         user.timeTillDeath = block.timestamp + (_amount * tankDuration);
 
-        emit AstronautRescued(
-            msg.sender,
-            _tokenId,
-            _amount,
-            user.timeTillDeath
-        );
+        emit AstronautRescued(msg.sender, tankId, _amount, user.timeTillDeath);
     }
 
     /**
      * @dev External function for dark matter bonus.
-     * @param _tokenId DarkMatter token Id
      * @param _amount DarkMatter amount
      * @param _skill Skill attribution
      */
-    function darkMatterNFTBonus(
-        uint256 _tokenId,
-        uint256 _amount,
-        uint256 _skill
-    ) external nonReentrant {
+    function darkMatterNFTBonus(uint256 _amount, uint256 _skill)
+        external
+        nonReentrant
+    {
         require(_amount <= 15, "Astronaut: Too much Dark Matter at once.");
 
-        Inventory.burn(msg.sender, _tokenId, _amount);
+        Inventory.burn(msg.sender, darkMatterId, _amount);
 
         players[msg.sender].darkMatterBonus += (2 * _amount);
 
@@ -356,7 +341,7 @@ contract Astronaut is Ownable, ReentrancyGuard {
 
         emit GotDarkMatterBonus(
             msg.sender,
-            _tokenId,
+            darkMatterId,
             _amount,
             players[msg.sender].darkMatterBonus
         );
@@ -396,13 +381,11 @@ contract Astronaut is Ownable, ReentrancyGuard {
      * @dev External function to train the astronaut. This function can be called only when astronaut has got O2 tanks.
      * @param _amount Vidya amount
      * @param _skill Skill attribution
-     * @param _tokenId Tank token Id
      * @param _tokenAmount Tank amount
      */
     function trainAstronaut(
         uint256 _amount,
         uint256 _skill,
-        uint256 _tokenId,
         uint256 _tokenAmount
     ) external notDeadYet nonReentrant {
         require(_skill <= 2, "Astronaut: Skill outside of range");
@@ -422,7 +405,7 @@ contract Astronaut is Ownable, ReentrancyGuard {
         } else {
             require(_tokenAmount <= 15, "Astronaut: Too many tanks");
 
-            Inventory.burn(msg.sender, _tokenId, _amount);
+            Inventory.burn(msg.sender, tankId, _amount);
 
             experienceGained = _tokenAmount * expToBuy;
         }
