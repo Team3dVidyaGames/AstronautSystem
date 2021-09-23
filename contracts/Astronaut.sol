@@ -37,14 +37,52 @@ contract Astronaut is Ownable, ReentrancyGuard {
         uint256 skill
     );
 
-    event nameChange(string astroName);
-    event durationChanged(uint256 duration);
-    event astronautInSpace(address player, string spaceman);
+    /// @notice Event emitted when dark matter collected.
+    event DarkMatterCollected(address user, uint256 darkMatter);
 
-    event maxLevelAcheived(uint256 skill, uint256 levelReached);
-    event harvestExtend(address player, uint256 lengthTillEnd);
-    event experienceTrained(address player, uint256 skill, uint256 experience);
-    event costChange(uint256 tankPrice);
+    /// @notice Event emitted when max level acheived.
+    event maxLevelAcheived(uint256 skill, uint256 maxLevel);
+
+    /// @notice Event emitted when astronaut rescued.
+    event AstronautRescued(
+        address user,
+        uint256 tokenId,
+        uint256 amount,
+        uint256 timeTillDeath
+    );
+
+    /// @notice Event emitted when dark matter bonus is gotten.
+    event GotDarkMatterBonus(
+        address user,
+        uint256 tokenId,
+        uint256 amount,
+        uint256 darkMatterBonus
+    );
+
+    /// @notice Event emitted when dark matter bonus is removed.
+    event DarkMatterBonusRemoved(
+        address user,
+        uint256 removeBonus,
+        uint256 darkMatterBonus
+    );
+
+    /// @notice Event emitted when astronaut is trained.
+    event AstronautTrained(address user, uint256 skill, uint256 experience);
+
+    /// @notice Event emitted when the astronaut name is changed.
+    event NameChanged(string newName);
+
+    /// @notice Event emitted when the tank duration is changed.
+    event TankDurationChanged(uint256 duration);
+
+    /// @notice Event emitted when the tank cost is changed.
+    event TankCostChanged(uint256 tankCost);
+
+    /// @notice Event emitted when the max dark matter tank is changed.
+    event TankRateChanged(uint256 newMaxDarkMatterTank);
+
+    /// @notice Event emitted when the level is updated.
+    event LevelUpdated(bool updated, uint256 level);
 
     IERC20 Vidya;
     IDarkMatter DarkMatter;
@@ -130,7 +168,7 @@ contract Astronaut is Ownable, ReentrancyGuard {
     /**
      * @dev External function to create Astronaut.
      * @param _name Astronaut Name
-     * @param _skill Skill amount
+     * @param _skill Skill attribution
      * @param _tokenId Tank token Id
      * @param _amount Tank amount
      */
@@ -171,7 +209,7 @@ contract Astronaut is Ownable, ReentrancyGuard {
      * @dev External function to add tanks.
      * @param _tokenId Tank token Id
      * @param _amount Tank amount
-     * @param _skill Skill amount
+     * @param _skill Skill attribution
      */
     function addTanks(
         uint256 _tokenId,
@@ -197,10 +235,22 @@ contract Astronaut is Ownable, ReentrancyGuard {
         );
     }
 
-    function harvestDarkMatter(uint256 _skill) public notDeadYet nonReentrant {
+    /**
+     * @dev External function to collect dark matter.
+     * @param _skill Skill attribution
+     */
+    function harvestDarkMatter(uint256 _skill)
+        external
+        notDeadYet
+        nonReentrant
+    {
         collectDarkMatter(_skill);
     }
 
+    /**
+     * @dev Internal function to collect dark matter.
+     * @param _skill Skill attribution
+     */
     function collectDarkMatter(uint256 _skill) internal {
         Astronauts storage user = players[msg.sender];
 
@@ -231,10 +281,17 @@ contract Astronaut is Ownable, ReentrancyGuard {
         );
 
         DarkMatter.mint(msg.sender, darkMatter); //mint dark matter
+
+        emit DarkMatterCollected(msg.sender, darkMatter);
     }
 
+    /**
+     * @dev External function to rescue astronaut. This function can be called by only astronuat hasn't got any O2 tanks.
+     * @param _tokenId Tank token Id
+     * @param _amount Tank amount
+     */
     function rescueAstronaut(uint256 _tokenId, uint256 _amount)
-        public
+        external
         aloneInSpace
         nonReentrant
     {
@@ -244,6 +301,7 @@ contract Astronaut is Ownable, ReentrancyGuard {
         );
 
         require(_amount <= 15, "Astronaut: Too many tanks");
+
         Vidya.safeTransferFrom(msg.sender, vaultAddr, fee);
 
         Inventory.burn(msg.sender, _tokenId, _amount);
@@ -260,20 +318,36 @@ contract Astronaut is Ownable, ReentrancyGuard {
             user.multiplier[i] = 100 - level;
             user.experience[i] = 0;
         }
+
         user.lastCollected = block.timestamp;
+
         user.darkMatterCollectionRate = DMCollectionRate(
             user.multiplier[0],
             user.multiplier[1],
             user.multiplier[2]
         );
+
         user.timeTillDeath = block.timestamp + (_amount * tankDuration);
+
+        emit AstronautRescued(
+            msg.sender,
+            _tokenId,
+            _amount,
+            user.timeTillDeath
+        );
     }
 
+    /**
+     * @dev External function for dark matter bonus.
+     * @param _tokenId DarkMatter token Id
+     * @param _amount DarkMatter amount
+     * @param _skill Skill attribution
+     */
     function darkMatterNFTBonus(
         uint256 _tokenId,
         uint256 _amount,
         uint256 _skill
-    ) public nonReentrant {
+    ) external nonReentrant {
         require(_amount <= 15, "Astronaut: Too much Dark Matter at once.");
 
         Inventory.burn(msg.sender, _tokenId, _amount);
@@ -281,68 +355,84 @@ contract Astronaut is Ownable, ReentrancyGuard {
         players[msg.sender].darkMatterBonus += (2 * _amount);
 
         collectDarkMatter(_skill);
-    }
 
-    function removeDarkMatterBonus(uint256 _amount) public nonReentrant {
-        Astronauts storage user = players[msg.sender];
-        uint256 nftOwned = user.darkMatterBonus - 100;
-        uint256 removeBonus = _amount * 2;
-        if (nftOwned >= removeBonus) {
-            while (_amount > 0) {
-                Inventory.createItemFromTemplate(
-                    darkMatterId,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    1,
-                    msg.sender
-                );
-                _amount -= 1;
-            }
-        }
-        user.darkMatterBonus = 100 + nftOwned - removeBonus;
+        emit GotDarkMatterBonus(
+            msg.sender,
+            _tokenId,
+            _amount,
+            players[msg.sender].darkMatterBonus
+        );
     }
 
     /**
-     * @dev trains the astronaut
-     * @param _amount is only used when training skill 0, 1
-     * @param _skill is only used when training skill 0, 1
-     * @param _tokenId is only used to train skill 2
-     * @param _tokenAmount is only used to train skill 2
+     * @dev External function to remove dark matter bonus.
+     * @param _amount DarkMatter amount
+     */
+    function removeDarkMatterBonus(uint256 _amount) external nonReentrant {
+        Astronauts storage user = players[msg.sender];
+        uint256 nftOwned = user.darkMatterBonus - 100;
+        uint256 removeBonus = _amount * 2;
+
+        if (nftOwned >= removeBonus) {
+            Inventory.createItemFromTemplate(
+                darkMatterId,
+                0,
+                0,
+                0,
+                0,
+                0,
+                _amount,
+                msg.sender
+            );
+        }
+        user.darkMatterBonus = 100 + nftOwned - removeBonus;
+
+        emit DarkMatterBonusRemoved(
+            msg.sender,
+            removeBonus,
+            user.darkMatterBonus
+        );
+    }
+
+    /**
+     * @dev External function to train the astronaut. This function can be called only when astronaut has got O2 tanks.
+     * @param _amount Vidya amount
+     * @param _skill Skill attribution
+     * @param _tokenId Tank token Id
+     * @param _tokenAmount Tank amount
      */
     function trainAstronaut(
         uint256 _amount,
         uint256 _skill,
         uint256 _tokenId,
         uint256 _tokenAmount
-    ) public notDeadYet nonReentrant {
+    ) external notDeadYet nonReentrant {
         require(_skill <= 2, "Astronaut: Skill outside of range");
+
         uint256 experienceGained;
+
         if (_skill == 0) {
             Vidya.safeTransferFrom(msg.sender, vaultAddr, _amount);
             experienceGained = (_amount * expToBuy) / costOfTank;
-        }
-        if (_skill == 1) {
+        } else if (_skill == 1) {
             require(
                 DarkMatter.balanceOf(msg.sender) >= _amount,
                 "Astronaut: Not enough Dark Matter."
             );
             DarkMatter.burn(msg.sender, _amount);
             experienceGained = (_amount * expToBuy) / maxDarkMatterTank;
-        }
-        if (_skill == 2) {
+        } else {
             require(_tokenAmount <= 15, "Astronaut: Too many tanks");
 
             Inventory.burn(msg.sender, _tokenId, _amount);
 
             experienceGained = _tokenAmount * expToBuy;
         }
+
         players[msg.sender].experience[_skill] += experienceGained;
         collectDarkMatter(_skill);
 
-        emit experienceTrained(msg.sender, _skill, experienceGained);
+        emit AstronautTrained(msg.sender, _skill, experienceGained);
     }
 
     /**
@@ -363,35 +453,58 @@ contract Astronaut is Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev continues to increase the levels, if the level has not already been made.
+     * @dev Private function to increase level.
+     * @param _level Increased level
      */
-
     function nextLevel(uint256 _level) private {
         if (_level >= levels.length) {
             levels.push(levels[_level] + ((_level + 1) * darkMatterDeci));
+            emit LevelUpdated(true, _level);
         }
+
+        emit LevelUpdated(false, _level);
     }
 
-    function changeName(string memory _name) public notDeadYet nonReentrant {
+    /**
+     * @dev External function to change the name. This function can be called only when astronaut has got O2 tanks.
+     * @param _name New name
+     */
+    function changeName(string memory _name) external notDeadYet nonReentrant {
         Vidya.safeTransferFrom(msg.sender, vaultAddr, fee);
         Vidya.safeTransferFrom(msg.sender, devAddr, fee);
 
         players[msg.sender].name = _name;
-        emit nameChange(_name);
+
+        emit NameChanged(_name);
     }
 
-    function changeTankDuration(uint256 _hours) public onlyOwner {
+    /**
+     * @dev External function to change the tank duration. This function can be called by only owner.
+     * @param _hours Duration hours
+     */
+    function changeTankDuration(uint256 _hours) external onlyOwner {
         tankDuration = _hours * 1 hours;
-        emit durationChanged(tankDuration);
+
+        emit TankDurationChanged(tankDuration);
     }
 
-    function changeTankRate(uint256 _DMamount) public onlyOwner {
-        // maxDarkMatterTank = _DMamount * scale;
-        // emit tankRateChange(_DMamount);
+    /**
+     * @dev External function to change the max dark matter tank. This function can be called by only owner.
+     * @param _newMaxDMTank New max dark matter tank
+     */
+    function changeTankRate(uint256 _newMaxDMTank) external onlyOwner {
+        maxDarkMatterTank = _newMaxDMTank;
+
+        emit TankRateChanged(_newMaxDMTank);
     }
 
-    function changeCostOfTank(uint256 _amount) public onlyOwner {
-        costOfTank = _amount;
-        emit costChange(_amount);
+    /**
+     * @dev External function to change the cost of tank. This function can be called by only owner.
+     * @param _cost Cost of tank
+     */
+    function changeCostOfTank(uint256 _cost) external onlyOwner {
+        costOfTank = _cost;
+
+        emit TankCostChanged(_cost);
     }
 }
