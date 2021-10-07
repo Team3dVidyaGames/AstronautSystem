@@ -392,4 +392,13 @@ contract SpaceStation is Ownable, ReentrancyGuard {
 
         emit LevelsCreated(levels);
     }
+    
+    function astronautRate(uint256 _tokenID) view return(uint256){
+        CollectionData memory data = astronauts[_tokenID];
+    
+        return (data.rate * adjustedDmRate) / 500;
+    
+    }
+    
+    
 }
