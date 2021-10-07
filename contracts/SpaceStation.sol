@@ -106,6 +106,8 @@ contract SpaceStation is Ownable, ReentrancyGuard {
         levels[1] = 300 * 10**18;
         levels[2] = 600 * 10**18;
         levels[3] = 1000 * 10**18;
+        
+        numberAstronauts = 1;
 
         emit SpaceStationDeployed();
     }
@@ -154,6 +156,10 @@ contract SpaceStation is Ownable, ReentrancyGuard {
 
         data.collectionStart = block.timestamp;
         data.registered = true;
+        
+        adjustedDmRate = dmPerBlock / numberAstronauts;
+        numberAstronauts +=1;
+        
 
         emit Registered(msg.sender, _tokenId, _name);
     }
