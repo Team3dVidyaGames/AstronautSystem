@@ -31,7 +31,7 @@ contract SpaceStation is Ownable, ReentrancyGuard {
     /// @notice Event emitted when user resupplied the astronaut.
     event Resupplied(
         address user,
-        uint256 astronautId,
+        uint256 astronautTemplateId,
         uint256 collectionStartTime,
         uint256 tankAmount
     );
@@ -66,7 +66,7 @@ contract SpaceStation is Ownable, ReentrancyGuard {
     uint256 public dmPerBlock;
     uint256 public numberAstorsnauts;
     uint256 public adjustedDmRate;
-    uint256 public astronautId;
+    uint256 public astronautTemplateId;
     uint256 public O2TankId;
     uint256 public dmId;
     uint256[100] public levels;
@@ -78,8 +78,8 @@ contract SpaceStation is Ownable, ReentrancyGuard {
      * @param _DarkMatter Interface of DarkMatter
      * @param _Vidya Interface of Vidya (0x3D3D35bb9bEC23b06Ca00fe472b50E7A4c692C30)
      * @param _vaultAddress Vault Address
-     * @param _dmPerBlock ??
-     * @param _astronautId Astronaut token id
+     * @param _dmPerBlock Dark Matter per block
+     * @param _astronautTemplateId Astronaut template token id
      * @param _O2TankId Tank token id
      * @param _dmId DarkMatter token id
      */
@@ -89,7 +89,7 @@ contract SpaceStation is Ownable, ReentrancyGuard {
         IERC20 _Vidya,
         address _vaultAddress,
         uint256 _dmPerBlock,
-        uint256 _astronautId,
+        uint256 _astronautTemplateId,
         uint256 _O2TankId,
         uint256 _dmId
     ) {
@@ -98,7 +98,7 @@ contract SpaceStation is Ownable, ReentrancyGuard {
         Vidya = _Vidya;
         vaultAddress = _vaultAddress;
         dmPerBlock = _dmPerBlock;
-        astronautId = _astronautId;
+        astronautTemplateId = _astronautTemplateId;
         O2TankId = _O2TankId;
         dmId = _dmId;
 
@@ -112,7 +112,7 @@ contract SpaceStation is Ownable, ReentrancyGuard {
 
     /**
      * @dev External function to register the astronaut.
-     * @param _tokenId Astronaut Item token Id
+     * @param _tokenId Astronaut item token id
      * @param _name Astronaut name
      */
     function register(uint256 _tokenId, string memory _name)
@@ -128,8 +128,8 @@ contract SpaceStation is Ownable, ReentrancyGuard {
         IInventory.Item memory astronaut = Inventory.allItems(_tokenId);
 
         require(
-            !astronaut.burned && (astronaut.templateId == astronautId),
-            "Space Station: Astronaut Does Not Exisit"
+            !astronaut.burned && (astronaut.templateId == astronautTemplateId),
+            "Space Station: Astronaut does not exist"
         );
 
         CollectionData storage data = astronauts[_tokenId];
@@ -158,14 +158,12 @@ contract SpaceStation is Ownable, ReentrancyGuard {
 
     /**
      * @dev External function to collect the dark matter.
-     * @param _astronautId Astronaut Item token Id
+     * @param _tokenId Astronaut item token id
      * @param _tankAmount O2 tank amount
      */
-    function collectDarkMatter(uint256 _astronautId, uint256 _tankAmount)
-        external
-    {
+    function collectDarkMatter(uint256 _tokenId, uint256 _tankAmount) external {
         require(
-            Inventory.balanceOf(msg.sender, _astronautId) > 0,
+            Inventory.balanceOf(msg.sender, _tokenId) > 0,
             "Space Station: Permission is not granted"
         );
 
@@ -175,13 +173,13 @@ contract SpaceStation is Ownable, ReentrancyGuard {
             "Space Station: Miscalculation on O2 tanks"
         );
 
-        CollectionData storage data = astronauts[_astronautId];
+        CollectionData storage data = astronauts[_tokenId];
 
-        require(data.registered, "Space Station: Astronaut not registered.");
+        require(data.registered, "Space Station: Astronaut is not registered");
 
         require(
             data.collectionStart <= block.timestamp,
-            "Space Station: Astronaut is not ready for Mission"
+            "Space Station: Astronaut is not ready for mission"
         );
 
         uint256 timeDifference = block.timestamp - data.collectionStart;
@@ -209,20 +207,20 @@ contract SpaceStation is Ownable, ReentrancyGuard {
 
     /**
      * @dev External function to train the astronaut.
-     * @param _astronautId Astronaut Item token Id
+     * @param _tokenId Astronaut item token id
      * @param _vidyaAmount Vidya amount user holds
      * @param _dmAmount Dark Matter amount
-     * @param _O2tanks O2 tank amount
+     * @param _tankAmount O2 tank amount
      * @param _dmNFTAmount Dark Matter NFT amount
      */
     function trainAstronaut(
-        uint256 _astronautId,
+        uint256 _tokenId,
         uint256 _vidyaAmount,
         uint256 _dmAmount,
-        uint256 _O2tanks,
+        uint256 _tankAmount,
         uint256 _dmNFTAmount
     ) external nonReentrant {
-        CollectionData storage data = astronauts[_astronautId];
+        CollectionData storage data = astronauts[_tokenId];
 
         require(data.registered, "Space Station: Astronaut is not registered");
 
@@ -237,32 +235,32 @@ contract SpaceStation is Ownable, ReentrancyGuard {
         if (_dmAmount > 0 && data.features[1] < 256) {
             require(
                 DarkMatter.balanceOf(msg.sender) >= _dmAmount,
-                "Space Station: Misscalculation on Dark Matter token."
+                "Space Station: Caller hasn't got enough dark matters"
             );
             DarkMatter.burn(msg.sender, _dmAmount);
             xpGained[1] = _dmAmount / 2;
         }
 
-        if (_O2tanks > 0 && data.features[2] < 256) {
+        if (_tankAmount > 0 && data.features[2] < 256) {
             require(
-                Inventory.balanceOf(msg.sender, O2TankId) >= _O2tanks,
-                "Space Station: Misscalculation on O2 tanks."
+                Inventory.balanceOf(msg.sender, O2TankId) >= _tankAmount,
+                "Space Station: Caller hasn't got enough O2 tanks"
             );
-            Inventory.burn(msg.sender, O2TankId, _O2tanks);
-            xpGained[2] = (_O2tanks * (10**20));
+            Inventory.burn(msg.sender, O2TankId, _tankAmount);
+            xpGained[2] = (_tankAmount * (10**20));
         }
 
         if (_dmNFTAmount > 0 && data.features[3] < 256) {
             require(
                 Inventory.balanceOf(msg.sender, dmId) >= _dmNFTAmount,
-                "Space Station: Misscalculation on Dark Matter NFTs."
+                "Space Station: Caller hasn't got enough dark matter nfts"
             );
             Inventory.burn(msg.sender, dmId, _dmNFTAmount);
             adjustNFT = true;
             data.features[3] += _dmNFTAmount;
         }
 
-        trainAstronautXP(xpGained, _astronautId, adjustNFT);
+        trainAstronautXP(xpGained, _tokenId, adjustNFT);
 
         emit AstronautTrained(msg.sender, data);
     }
@@ -270,21 +268,19 @@ contract SpaceStation is Ownable, ReentrancyGuard {
     /**
      * @dev Public function to train the astronaut XP.
      * @param _xpGained Array of XP gained
-     * @param _astronautId Astronaut token Id
+     * @param _tokenId Astronaut token id
      * @param _adjustNFT Adjust NFT
      */
     function trainAstronautXP(
         uint256[3] memory _xpGained,
-        uint256 _astronautId,
+        uint256 _tokenId,
         bool _adjustNFT
     ) public nonReentrant {
-        CollectionData storage data = astronauts[_astronautId];
+        CollectionData storage data = astronauts[_tokenId];
 
         require(data.registered, "Space Station: Astronaut is not registered");
 
-        IInventory.Item memory stats = Inventory.allItems(_astronautId);
-
-        bool adjustNFT = _adjustNFT;
+        IInventory.Item memory stats = Inventory.allItems(_tokenId);
 
         _xpGained[0] += data.experiences[0];
         _xpGained[1] += data.experiences[1];
@@ -294,17 +290,17 @@ contract SpaceStation is Ownable, ReentrancyGuard {
             while (
                 _xpGained[i] > levels[data.levels[i]] && data.levels[i] < 100
             ) {
-                _xpGained[i] = _xpGained[i] - levels[data.levels[i]];
+                _xpGained[i] -= levels[data.levels[i]];
                 data.levels[i]++;
-                adjustNFT = true;
+                _adjustNFT = true;
             }
             data.features[i] = (data.levels[i] * 255) / 100;
             data.experiences[i] = _xpGained[i];
         }
 
-        if (adjustNFT) {
+        if (_adjustNFT) {
             Inventory.changeFeaturesForItem(
-                _astronautId,
+                _tokenId,
                 uint8(data.features[0]),
                 uint8(data.features[1]),
                 uint8(data.features[2]),
@@ -322,23 +318,23 @@ contract SpaceStation is Ownable, ReentrancyGuard {
 
     /**
      * @dev External function to resupply the astronaut.
-     * @param _astronautId Astronaut token Id
+     * @param _tokenId Astronaut token id
      * @param _tankAmount O2 tanks amount
      */
-    function resupply(uint256 _astronautId, uint256 _tankAmount)
+    function resupply(uint256 _tokenId, uint256 _tankAmount)
         external
         nonReentrant
     {
-        CollectionData storage data = astronauts[_astronautId];
+        CollectionData storage data = astronauts[_tokenId];
 
         require(data.registered, "Space Station: Astronaut is not registered");
         require(
             data.collectionStart > block.timestamp,
-            "Space Station: Astronaut is not ready for Mission"
+            "Space Station: Astronaut is not ready for mission"
         );
         require(
             Inventory.balanceOf(msg.sender, O2TankId) >= _tankAmount,
-            "Space Station: Misscalculation on supplies"
+            "Space Station: Caller hasn't got enough O2 tanks"
         );
 
         uint256 timeDifference = (data.collectionStart - block.timestamp) /
@@ -349,7 +345,7 @@ contract SpaceStation is Ownable, ReentrancyGuard {
 
         emit Resupplied(
             msg.sender,
-            _astronautId,
+            _tokenId,
             data.collectionStart,
             _tankAmount
         );
@@ -372,7 +368,7 @@ contract SpaceStation is Ownable, ReentrancyGuard {
     function createLevels() external onlyOwner {
         require(
             levels[99] == 0,
-            "Space Station: Levels are already calculated."
+            "Space Station: Levels are already calculated"
         );
 
         uint256 index = 4;
