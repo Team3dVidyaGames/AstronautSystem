@@ -64,7 +64,7 @@ contract SpaceStation is Ownable, ReentrancyGuard {
     IERC20 public Vidya;
 
     uint256 public dmPerBlock;
-    uint256 public numberAstorsnauts;
+    uint256 public numberAstronauts;
     uint256 public adjustedDmRate;
     uint256 public astronautTemplateId;
     uint256 public O2TankId;
@@ -124,7 +124,9 @@ contract SpaceStation is Ownable, ReentrancyGuard {
             "Space Station: Name is already taken"
         );
         astronautsNames[_name] = true;
-
+        numberAstronauts ++;
+        adjustedDmRate = dmPerBlock / numberAstronauts;
+        
         IInventory.Item memory astronaut = Inventory.allItems(_tokenId);
 
         require(
@@ -353,11 +355,11 @@ contract SpaceStation is Ownable, ReentrancyGuard {
 
     /**
      * @dev External function to change the base rate. This function can be called by only owner.
-     * @param _dmPerBlock Dark matter block
+     * @param _dmPerBlock Dark matter per block
      */
     function changeBaseRate(uint256 _dmPerBlock) external onlyOwner {
         dmPerBlock = _dmPerBlock;
-        adjustedDmRate = dmPerBlock / numberAstorsnauts;
+        adjustedDmRate = dmPerBlock / numberAstronauts;
 
         emit BaseRateChange(adjustedDmRate);
     }
