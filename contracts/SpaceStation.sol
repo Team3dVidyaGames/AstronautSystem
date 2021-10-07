@@ -281,13 +281,16 @@ contract SpaceStation is Ownable, ReentrancyGuard {
      */
     function trainAstronautXP(
         uint256[3] memory _xpGained,
-        uint256 _tokenId,
-        bool _adjustNFT
+        uint256 _tokenId
     ) public nonReentrant {
+        
         CollectionData storage data = astronauts[_tokenId];
-
+        uint256 spendXP = _xpGained[0] + _xpGained[1] + _xpGained[2];
+        bool _adjustNFT;
+        
+        require(date.experience >= spendXP,"Space Station: Astornaut does not have enough XP.");
         require(data.registered, "Space Station: Astronaut is not registered");
-
+        data.experience = data.experience - spendXP;
         IInventory.Item memory stats = Inventory.allItems(_tokenId);
 
         _xpGained[0] += data.experiences[0];
