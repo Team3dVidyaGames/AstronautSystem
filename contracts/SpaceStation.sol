@@ -106,7 +106,7 @@ contract SpaceStation is Ownable, ReentrancyGuard {
         levels[1] = 300 * 10**18;
         levels[2] = 600 * 10**18;
         levels[3] = 1000 * 10**18;
-        
+
         numberAstronauts = 1;
 
         emit SpaceStationDeployed();
@@ -126,9 +126,7 @@ contract SpaceStation is Ownable, ReentrancyGuard {
             "Space Station: Name is already taken"
         );
         astronautsNames[_name] = true;
-        numberAstronauts ++;
-        adjustedDmRate = dmPerBlock / numberAstronauts;
-        
+
         IInventory.Item memory astronaut = Inventory.allItems(_tokenId);
 
         require(
@@ -156,10 +154,9 @@ contract SpaceStation is Ownable, ReentrancyGuard {
 
         data.collectionStart = block.timestamp;
         data.registered = true;
-        
+
         adjustedDmRate = dmPerBlock / numberAstronauts;
-        numberAstronauts +=1;
-        
+        numberAstronauts++;
 
         emit Registered(msg.sender, _tokenId, _name);
     }
@@ -269,37 +266,50 @@ contract SpaceStation is Ownable, ReentrancyGuard {
         }
 
         adjustmentCheck(xpGained, _tokenId, adjustNFT);
-        
     }
 
     /**
-     * @dev Public function to train the astronaut XP.
+     * @dev External function to train the astronaut XP.
      * @param _xpGained Array of XP gained
      * @param _tokenId Astronaut token id
      */
-    function trainAstronautXP(
-        uint256[3] memory _xpGained,
-        uint256 _tokenId
-    ) public nonReentrant {
-        
+    function trainAstronautXP(uint256[3] memory _xpGained, uint256 _tokenId)
+        external
+        nonReentrant
+    {
         CollectionData storage data = astronauts[_tokenId];
         uint256 spendXP = _xpGained[0] + _xpGained[1] + _xpGained[2];
-        
-        require(date.experience >= spendXP,"Space Station: Astornaut does not have enough XP.");
+
+        require(
+            data.experience >= spendXP,
+            "Space Station: Astornaut does not have enough XP"
+        );
+
         require(data.registered, "Space Station: Astronaut is not registered");
-        data.experience = data.experience - spendXP;
-        IInventory.Item memory stats = Inventory.allItems(_tokenId);
+
+        data.experience -= spendXP;
 
         _xpGained[0] += data.experiences[0];
         _xpGained[1] += data.experiences[1];
         _xpGained[2] += data.experiences[2];
 
         adjustmentCheck(_xpGained, _tokenId, false);
-
     }
-    
-    function adjustmentCheck(uint256[3] _xpGained, uint256 _tokenID, bool _adjustNFT) internal{
-        CollectionData storage data = astronauts[_tokenID];
+
+    /**
+     * @dev Private function to check the adjustment.
+     * @param _xpGained Array of XP gained
+     * @param _tokenId Astronaut token id
+     * @param _adjustNFT Adjustment NFT
+     */
+    function adjustmentCheck(
+        uint256[3] memory _xpGained,
+        uint256 _tokenId,
+        bool _adjustNFT
+    ) private {
+        CollectionData storage data = astronauts[_tokenId];
+        IInventory.Item memory stats = Inventory.allItems(_tokenId);
+
         for (uint8 i = 0; i < 3; i++) {
             while (
                 _xpGained[i] > levels[data.levels[i]] && data.levels[i] < 100
@@ -325,8 +335,8 @@ contract SpaceStation is Ownable, ReentrancyGuard {
             data.rate =
                 (data.features[0] + data.features[1] + 1) *
                 (50 + data.features[3]);
-        }    
-    
+        }
+
         emit AstronautTrained(msg.sender, data);
     }
 
@@ -395,13 +405,18 @@ contract SpaceStation is Ownable, ReentrancyGuard {
 
         emit LevelsCreated(levels);
     }
-    
-    function astronautRate(uint256 _tokenID) view return(uint256){
-        CollectionData memory data = astronauts[_tokenID];
-    
+
+    /**
+     * @dev External function to get the astronaut rates.
+     * @param _tokenId Astronaut token id
+     */
+    function getAstronautRate(uint256 _tokenId)
+        external
+        view
+        returns (uint256)
+    {
+        CollectionData memory data = astronauts[_tokenId];
+
         return (data.rate * adjustedDmRate) / 500;
-    
     }
-    
-    
 }
