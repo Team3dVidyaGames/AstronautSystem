@@ -268,16 +268,14 @@ contract SpaceStation is Ownable, ReentrancyGuard {
             data.features[3] += _dmNFTAmount;
         }
 
-        trainAstronautXP(xpGained, _tokenId, adjustNFT);
-
-        emit AstronautTrained(msg.sender, data);
+        adjustmentCheck(xpGained, _tokenId, adjustNFT);
+        
     }
 
     /**
      * @dev Public function to train the astronaut XP.
      * @param _xpGained Array of XP gained
      * @param _tokenId Astronaut token id
-     * @param _adjustNFT Adjust NFT
      */
     function trainAstronautXP(
         uint256[3] memory _xpGained,
@@ -286,7 +284,6 @@ contract SpaceStation is Ownable, ReentrancyGuard {
         
         CollectionData storage data = astronauts[_tokenId];
         uint256 spendXP = _xpGained[0] + _xpGained[1] + _xpGained[2];
-        bool _adjustNFT;
         
         require(date.experience >= spendXP,"Space Station: Astornaut does not have enough XP.");
         require(data.registered, "Space Station: Astronaut is not registered");
@@ -297,6 +294,12 @@ contract SpaceStation is Ownable, ReentrancyGuard {
         _xpGained[1] += data.experiences[1];
         _xpGained[2] += data.experiences[2];
 
+        adjustmentCheck(_xpGained, _tokenId, false);
+
+    }
+    
+    function adjustmentCheck(uint256[4] _xpGained, uint256 _tokenID, bool _adjustNFT) internal{
+        CollectionData storage data = astronauts[_tokenID];
         for (uint8 i = 0; i < 3; i++) {
             while (
                 _xpGained[i] > levels[data.levels[i]] && data.levels[i] < 100
@@ -322,8 +325,8 @@ contract SpaceStation is Ownable, ReentrancyGuard {
             data.rate =
                 (data.features[0] + data.features[1] + 1) *
                 (50 + data.features[3]);
-        }
-
+        }    
+    
         emit AstronautTrained(msg.sender, data);
     }
 
