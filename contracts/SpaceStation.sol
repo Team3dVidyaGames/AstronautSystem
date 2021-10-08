@@ -298,7 +298,7 @@ contract SpaceStation is Ownable, ReentrancyGuard {
 
     }
     
-    function adjustmentCheck(uint256[4] _xpGained, uint256 _tokenID, bool _adjustNFT) internal{
+    function adjustmentCheck(uint256[3] _xpGained, uint256 _tokenID, bool _adjustNFT) internal{
         CollectionData storage data = astronauts[_tokenID];
         for (uint8 i = 0; i < 3; i++) {
             while (
