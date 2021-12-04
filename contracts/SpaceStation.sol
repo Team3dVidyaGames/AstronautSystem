@@ -419,4 +419,13 @@ contract SpaceStation is Ownable, ReentrancyGuard {
 
         return (data.rate * adjustedDmRate) / 500;
     }
+    // The developer address is the owner of the contract in Ownable.
+    function developer() external view returns(address){
+    
+        return owner();
+    }
+    //SpaceStation is owned and Operated by TeamOS devFee not built in
+    function devFee() external view returns(uint256){
+        return 0;
+    }
 }
