@@ -282,7 +282,7 @@ contract SpaceStation is Ownable, ReentrancyGuard {
 
         require(
             data.experience >= spendXP,
-            "Space Station: Astornaut does not have enough XP"
+            "Space Station: Astronaut does not have enough XP"
         );
 
         require(data.registered, "Space Station: Astronaut is not registered");
